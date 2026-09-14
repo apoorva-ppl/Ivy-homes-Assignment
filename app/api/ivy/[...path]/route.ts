@@ -19,12 +19,21 @@ async function handler(
     upstreamUrl.searchParams.set(key, value);
   });
 
+  if (!API_KEY) {
+    return NextResponse.json(
+      {
+        detail:
+          "IVY_API_KEY is not set on the server. Add it to .env.local (or your Vercel env vars) and restart.",
+      },
+      { status: 500 },
+    );
+  }
+
+  // The API rejects the key as a query parameter — it must be an X-API-Key header.
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "X-API-Key": API_KEY,
   };
-  if (API_KEY) {
-    headers["X-API-Key"] = API_KEY;
-  }
   const auth = req.headers.get("authorization");
   if (auth) headers["Authorization"] = auth;
 

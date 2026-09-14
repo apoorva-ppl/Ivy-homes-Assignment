@@ -28,7 +28,7 @@ export function useRentals(filters: RentalFilters) {
         max_price: filters.max_price,
         sort_by: filters.sort_by,
         order: filters.order,
-      }, false),
+      }),
     placeholderData: (prev) => prev,
   });
 }
@@ -36,7 +36,7 @@ export function useRentals(filters: RentalFilters) {
 export function useRental(id: string) {
   return useQuery({
     queryKey: ["rental", id],
-    queryFn: () => api.get<Rental>(`v1/rentals/${id}`, undefined, false),
+    queryFn: () => api.get<Rental>(`v1/rentals/${id}`),
     enabled: !!id,
   });
 }

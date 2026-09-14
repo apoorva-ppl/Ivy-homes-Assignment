@@ -19,22 +19,18 @@ export function useListings(filters: ListingFilters) {
   return useQuery({
     queryKey: ["listings", filters],
     queryFn: () =>
-      api.get<PaginatedResponse<Listing>>(
-        "v1/listings",
-        {
-          page: filters.page ?? 1,
-          limit: filters.limit ?? 20,
-          locality: filters.locality,
-          bhk: filters.bhk,
-          property_type: filters.property_type,
-          min_price: filters.min_price,
-          max_price: filters.max_price,
-          furnishing: filters.furnishing,
-          sort_by: filters.sort_by,
-          order: filters.order,
-        },
-        true,
-      ),
+      api.get<PaginatedResponse<Listing>>("v1/listings", {
+        page: filters.page ?? 1,
+        limit: filters.limit ?? 20,
+        locality: filters.locality,
+        bhk: filters.bhk,
+        property_type: filters.property_type,
+        min_price: filters.min_price,
+        max_price: filters.max_price,
+        furnishing: filters.furnishing,
+        sort_by: filters.sort_by,
+        order: filters.order,
+      }),
     placeholderData: (prev) => prev,
   });
 }
@@ -42,7 +38,7 @@ export function useListings(filters: ListingFilters) {
 export function useListing(id: string) {
   return useQuery({
     queryKey: ["listing", id],
-    queryFn: () => api.get<Listing>(`v1/listing/${id}`, undefined, true),
+    queryFn: () => api.get<Listing>(`v1/listing/${id}`),
     enabled: !!id,
   });
 }
@@ -53,8 +49,6 @@ export function useSimilarListings(id: string) {
     queryFn: () =>
       api.get<Listing[] | PaginatedResponse<Listing>>(
         `v1/listings/${id}/similar`,
-        undefined,
-        true,
       ),
     enabled: !!id,
   });

@@ -21,10 +21,16 @@ interface RequestOptions {
   auth?: boolean; // attach bearer token
 }
 
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const { method = "GET", params, body, auth = true } = options;
 
-  const url = new URL(`${PROXY_BASE}/${path}`, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+  const url = new URL(
+    `${PROXY_BASE}/${path}`,
+    typeof window !== "undefined" ? window.location.origin : "http://localhost",
+  );
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") {
@@ -33,10 +39,16 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     });
   }
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  let sentToken = false;
   if (auth) {
     const token = useAuthStore.getState().token;
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+      sentToken = true;
+    }
   }
 
   let res: Response;
@@ -48,7 +60,10 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       cache: "no-store",
     });
   } catch {
-    throw new ApiError("Network error — check your connection and try again.", 0);
+    throw new ApiError(
+      "Network error — check your connection and try again.",
+      0,
+    );
   }
 
   const text = await res.text();
@@ -62,6 +77,12 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   }
 
   if (!res.ok) {
+    // A 401 on a request we actually signed means the stored token is expired
+    // or revoked. Clear it so AuthGate bounces the user back to /login instead
+    // of leaving them stuck on an error screen with a dead session.
+    if (res.status === 401 && sentToken) {
+      useAuthStore.getState().logout();
+    }
     const detail =
       (data as ApiErrorBody | undefined)?.detail ||
       (typeof data === "string" ? data : undefined) ||

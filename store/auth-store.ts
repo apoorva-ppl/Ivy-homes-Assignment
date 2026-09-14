@@ -6,11 +6,9 @@ import type { User } from "@/lib/types";
 
 interface AuthState {
   token: string | null;
-  apiKey: string | null;
   user: User | null;
   expiresAt: number | null;
   setAuth: (token: string, expiresIn: number, user: User) => void;
-  setApiKey: (key: string) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
 }
@@ -19,7 +17,6 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       token: null,
-      apiKey: process.env.NEXT_PUBLIC_IVY_API_KEY || null,
       user: null,
       expiresAt: null,
       setAuth: (token, expiresIn, user) =>
@@ -28,7 +25,6 @@ export const useAuthStore = create<AuthState>()(
           user,
           expiresAt: Date.now() + expiresIn * 1000,
         }),
-      setApiKey: (key) => set({ apiKey: key }),
       logout: () => set({ token: null, user: null, expiresAt: null }),
       isAuthenticated: () => {
         const { token, expiresAt } = get();
@@ -41,6 +37,6 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "ivy-auth-storage",
-    }
-  )
+    },
+  ),
 );

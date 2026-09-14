@@ -22,7 +22,7 @@ export function useProjects(filters: ProjectFilters) {
         project_status: filters.project_status,
         sort_by: filters.sort_by,
         order: filters.order,
-      }, false),
+      }),
     placeholderData: (prev) => prev,
   });
 }
@@ -30,7 +30,7 @@ export function useProjects(filters: ProjectFilters) {
 export function useProject(id: string) {
   return useQuery({
     queryKey: ["project", id],
-    queryFn: () => api.get<Project>(`v1/projects/${id}`, undefined, false),
+    queryFn: () => api.get<Project>(`v1/projects/${id}`),
     enabled: !!id,
   });
 }
