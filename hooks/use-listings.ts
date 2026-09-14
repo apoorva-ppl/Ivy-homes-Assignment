@@ -38,7 +38,7 @@ export function useListings(filters: ListingFilters) {
 export function useListing(id: string) {
   return useQuery({
     queryKey: ["listing", id],
-    queryFn: () => api.get<Listing>(`v1/listing/${id}`),
+    queryFn: () => api.get<Listing>(`v1/listings/${id}`),
     enabled: !!id,
   });
 }

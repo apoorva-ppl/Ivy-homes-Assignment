@@ -13,7 +13,7 @@ export function useFavourites() {
   const token = useAuthStore((s) => s.token);
   return useQuery({
     queryKey: ["favourites"],
-    queryFn: () => api.get<FavouritesResponse>("v1/favourites"),
+    queryFn: () => api.get<FavouritesResponse>("v1/saved"),
     enabled: !!token,
   });
 }
@@ -28,21 +28,23 @@ export function useToggleFavourite() {
   const token = useAuthStore((s) => s.token);
 
   const add = useMutation({
-    mutationFn: (id: string) => api.post("v1/favourites", { id }),
+    mutationFn: (id: string) => api.post("v1/saved", { listing_id: id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["favourites"] });
       toast.success("Saved to favourites");
     },
-    onError: (err: ApiError) => toast.error(err.message || "Couldn't save this listing"),
+    onError: (err: ApiError) =>
+      toast.error(err.message || "Couldn't save this listing"),
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) => api.delete(`v1/favourites/${id}`),
+    mutationFn: (id: string) => api.delete(`v1/saved/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["favourites"] });
       toast.success("Removed from favourites");
     },
-    onError: (err: ApiError) => toast.error(err.message || "Couldn't remove this listing"),
+    onError: (err: ApiError) =>
+      toast.error(err.message || "Couldn't remove this listing"),
   });
 
   const toggle = (id: string, isFavourited: boolean) => {
