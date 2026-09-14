@@ -7,7 +7,10 @@ import { NextRequest, NextResponse } from "next/server";
 const API_BASE = process.env.IVY_API_BASE || "https://solve.ivy.homes";
 const API_KEY = process.env.IVY_API_KEY;
 
-async function handler(req: NextRequest, { params }: { params: { path: string[] } }) {
+async function handler(
+  req: NextRequest,
+  { params }: { params: { path: string[] } },
+) {
   const path = params.path.join("/");
   const incomingUrl = new URL(req.url);
   const upstreamUrl = new URL(`${API_BASE}/${path}`);
@@ -15,13 +18,13 @@ async function handler(req: NextRequest, { params }: { params: { path: string[] 
   incomingUrl.searchParams.forEach((value, key) => {
     upstreamUrl.searchParams.set(key, value);
   });
-  if (API_KEY) {
-    upstreamUrl.searchParams.set("api_key", API_KEY);
-  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
+  if (API_KEY) {
+    headers["X-API-Key"] = API_KEY;
+  }
   const auth = req.headers.get("authorization");
   if (auth) headers["Authorization"] = auth;
 
@@ -52,7 +55,7 @@ async function handler(req: NextRequest, { params }: { params: { path: string[] 
   } catch {
     return NextResponse.json(
       { detail: "Could not reach the Ivy Homes API. Please try again." },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }
