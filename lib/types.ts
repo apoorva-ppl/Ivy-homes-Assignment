@@ -79,10 +79,12 @@ export interface User {
 }
 
 export interface AuthResponse {
-  token: string;
+  access_token: string;
+  refresh_token: string;
   token_type: string;
   expires_in: number;
-  user: User;
+  refresh_url: string;
+  user: { email: string };
 }
 
 export interface AnalyticsSummary {
@@ -90,8 +92,18 @@ export interface AnalyticsSummary {
   total_listings?: number;
   median_price?: number;
   median_price_per_sqft?: number;
-  by_locality?: { locality: string; count?: number; median_price?: number; [k: string]: unknown }[];
-  by_bhk?: { bhk?: number | string; bedroom?: number | string; count?: number; [k: string]: unknown }[];
+  by_locality?: {
+    locality: string;
+    count?: number;
+    median_price?: number;
+    [k: string]: unknown;
+  }[];
+  by_bhk?: {
+    bhk?: number | string;
+    bedroom?: number | string;
+    count?: number;
+    [k: string]: unknown;
+  }[];
   [key: string]: unknown;
 }
 

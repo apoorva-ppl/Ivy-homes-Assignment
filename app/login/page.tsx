@@ -28,12 +28,24 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await api.post<AuthResponse>("auth/login", { email, password }, false);
-      setAuth(res.token, res.expires_in ?? 86400, res.user ?? {});
+      const res = await api.post<AuthResponse>(
+        "auth/login",
+        { email, password },
+        false,
+      );
+      setAuth(
+        res.access_token,
+        res.refresh_token,
+        res.expires_in,
+        res.user ?? {},
+      );
       toast.success("Welcome back");
       router.push("/listings");
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Something went wrong. Please try again.";
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.";
       setError(message);
     } finally {
       setLoading(false);
@@ -52,8 +64,12 @@ export default function LoginPage() {
           <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-ivy-500 text-paper">
             <Leaf size={20} strokeWidth={2.5} />
           </span>
-          <h1 className="font-display text-2xl font-semibold text-ink">Welcome to Ivy Homes</h1>
-          <p className="mt-1 text-sm text-muted">Sign in to browse, save, and compare listings.</p>
+          <h1 className="font-display text-2xl font-semibold text-ink">
+            Welcome to Ivy Homes
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            Sign in to browse, save, and compare listings.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,7 +106,11 @@ export default function LoginPage() {
           )}
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? <Loader2 size={16} className="animate-spin" /> : "Sign in"}
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              "Sign in"
+            )}
           </Button>
         </form>
       </motion.div>

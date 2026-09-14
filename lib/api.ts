@@ -21,6 +21,66 @@ interface RequestOptions {
   auth?: boolean; // attach bearer token
 }
 
+// The access token only lives 15 min (expires_in: 900). When a signed request
+// gets a 401, we use the refresh_token to get a new one and retry once before
+// giving up and logging the user out. Concurrent 401s share one refresh call.
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshAccessToken(): Promise<boolean> {
+  const { refreshToken, user } = useAuthStore.getState();
+  if (!refreshToken) return false;
+
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const res = await fetch(`${PROXY_BASE}/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+          cache: "no-store",
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        useAuthStore
+          .getState()
+          .setAuth(
+            data.access_token,
+            data.refresh_token ?? refreshToken,
+            data.expires_in ?? 900,
+            user ?? { email: "" },
+          );
+        return true;
+      } catch {
+        return false;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+  return refreshPromise;
+}
+
+async function doFetch(
+  url: string,
+  method: string,
+  headers: Record<string, string>,
+  body: unknown,
+): Promise<Response> {
+  try {
+    return await fetch(url, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+    });
+  } catch {
+    throw new ApiError(
+      "Network error — check your connection and try again.",
+      0,
+    );
+  }
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {},
@@ -39,31 +99,33 @@ export async function apiFetch<T>(
     });
   }
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  let sentToken = false;
-  if (auth) {
-    const token = useAuthStore.getState().token;
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-      sentToken = true;
+  const buildHeaders = (): {
+    headers: Record<string, string>;
+    sentToken: boolean;
+  } => {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    let sentToken = false;
+    if (auth) {
+      const token = useAuthStore.getState().token;
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+        sentToken = true;
+      }
     }
-  }
+    return { headers, sentToken };
+  };
 
-  let res: Response;
-  try {
-    res = await fetch(url.toString(), {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      cache: "no-store",
-    });
-  } catch {
-    throw new ApiError(
-      "Network error — check your connection and try again.",
-      0,
-    );
+  let { headers, sentToken } = buildHeaders();
+  let res = await doFetch(url.toString(), method, headers, body);
+
+  if (res.status === 401 && sentToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      ({ headers, sentToken } = buildHeaders());
+      res = await doFetch(url.toString(), method, headers, body);
+    }
   }
 
   const text = await res.text();
@@ -77,9 +139,6 @@ export async function apiFetch<T>(
   }
 
   if (!res.ok) {
-    // A 401 on a request we actually signed means the stored token is expired
-    // or revoked. Clear it so AuthGate bounces the user back to /login instead
-    // of leaving them stuck on an error screen with a dead session.
     if (res.status === 401 && sentToken) {
       useAuthStore.getState().logout();
     }

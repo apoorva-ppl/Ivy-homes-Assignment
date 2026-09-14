@@ -6,9 +6,15 @@ import type { User } from "@/lib/types";
 
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   user: User | null;
   expiresAt: number | null;
-  setAuth: (token: string, expiresIn: number, user: User) => void;
+  setAuth: (
+    token: string,
+    refreshToken: string,
+    expiresIn: number,
+    user: User,
+  ) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
 }
@@ -17,22 +23,21 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       token: null,
+      refreshToken: null,
       user: null,
       expiresAt: null,
-      setAuth: (token, expiresIn, user) =>
+      setAuth: (token, refreshToken, expiresIn, user) =>
         set({
           token,
+          refreshToken,
           user,
           expiresAt: Date.now() + expiresIn * 1000,
         }),
-      logout: () => set({ token: null, user: null, expiresAt: null }),
+      logout: () =>
+        set({ token: null, refreshToken: null, user: null, expiresAt: null }),
       isAuthenticated: () => {
-        const { token, expiresAt } = get();
-        if (!token) return false;
-        // Session should still be usable 30+ min later. We don't hard-expire
-        // client-side on the stored value; the API is the source of truth.
-        // We only use expiresAt for UI hints, not to force logout.
-        return true;
+        const { token } = get();
+        return !!token;
       },
     }),
     {
