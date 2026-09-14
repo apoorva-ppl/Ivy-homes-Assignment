@@ -9,6 +9,7 @@ interface AuthState {
   refreshToken: string | null;
   user: User | null;
   expiresAt: number | null;
+  hasHydrated: boolean;
   setAuth: (
     token: string,
     refreshToken: string,
@@ -17,6 +18,7 @@ interface AuthState {
   ) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
+  setHasHydrated: (v: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -26,6 +28,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
       expiresAt: null,
+      hasHydrated: false,
       setAuth: (token, refreshToken, expiresIn, user) =>
         set({
           token,
@@ -39,9 +42,13 @@ export const useAuthStore = create<AuthState>()(
         const { token } = get();
         return !!token;
       },
+      setHasHydrated: (v) => set({ hasHydrated: v }),
     }),
     {
       name: "ivy-auth-storage",
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );

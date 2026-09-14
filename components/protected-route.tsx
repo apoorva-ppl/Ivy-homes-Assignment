@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
 import { Loader2 } from "lucide-react";
@@ -7,19 +7,15 @@ import { Loader2 } from "lucide-react";
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const token = useAuthStore((s) => s.token);
-  const [hydrated, setHydrated] = useState(false);
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
 
   useEffect(() => {
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (hydrated && !token) {
+    if (hasHydrated && !token) {
       router.replace("/login");
     }
-  }, [hydrated, token, router]);
+  }, [hasHydrated, token, router]);
 
-  if (!hydrated || !token) {
+  if (!hasHydrated || !token) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <Loader2 className="animate-spin text-ivy-500" size={28} />
